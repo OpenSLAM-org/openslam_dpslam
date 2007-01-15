@@ -1,0 +1,182 @@
+
+			DP-SLAM Release 0.1.1
+
+			    Austin Eliazar
+		    http://www.cs.duke.edu/~eliazar/
+
+			     Ronald Parr
+		    http://www.cs.duke.edu/~parr/
+
+ 
+				README
+
+This Program is provided by Duke University and the authors as a
+service to the research community. It is provided without cost or
+restrictions, except for the User's acknowledgment that the Program
+is provided on an "As Is" basis and User understands that Duke
+University and the authors make no express or implied warranty of any
+kind.  Duke University and the authors specifically disclaim any
+implied warranty or merchantability or fitness for a particular
+purpose, and make no representations or warranties that the Program
+will not infringe the intellectual property rights of others. The User
+agrees to indemnify and hold harmless Duke University and the authors
+from and against any and all liability arising out of User's use of
+the Program.
+
+
+--- VERSION INFORMATION ---
+
+Version 0.1.1:
+
+This is a minor bug fix update to correct a rare problem with
+segmentation faults in version 0.1.
+
+Version 0.1:
+
+This release of DP-SLAM is based on our most recent (as of 7/05)
+hierarchical, linear/constant time approach to SLAM.  The basic ideas
+behind DP-SLAM are described on our web page:
+
+http://www.cs.duke.edu/~parr/dpslam/
+
+Please remember that this is version 0.1, unsupported, research
+quality code.
+
+
+
+--- HOW TO COMPILE DP-SLAM ---
+
+The included make file should work with most versions of Linux.  If
+you have suggestions for improving compatibility, please let us know.
+
+
+
+--- PREREQUISITES ---
+
+DP-SLAM requires a LOT of memory - on the order of several GB.  If you
+want to make extremely large maps and not worry about memory, you might
+consider trying a 64 bit machine with 8 GB.
+
+The motion model in our code assumes an iRobot ATRV Jr. running
+indoors.  If you use a different robot, you may want to adjust the
+parameters in the file low.c.  Please see the comments in low.c for
+more details.
+
+The motion model is the basis of the proposal distribution in the
+particle filter used by DP-SLAM.  As with any particle filtering
+approach, the proposal distribution has a dramatic impact on
+performance.  If you have a poor proposal distribution, or one that is
+gratuitously wide, you will need many more particles for accurate
+mapping.
+
+Our motion model was learned using the technique described the
+following paper, which is available on our web pages:
+
+"Learning Probabilistic Motion Models for Mobile Robots," Austin
+I. Eliazar and Ronald Parr, Proceedings of the Twenty First
+International Conference on Machine Learning (ICML-2004).
+
+
+
+--- HOW TO RUN DP-SLAM ---
+
+In this release, we assume that you have collected a data log and that
+you are running DP-SLAM off-line.
+
+Sample data logs are available on the DP-SLAM web page.  The format is
+fairly self explanatory. 
+
+  ODOMETRY <x> <y> <theta>
+The first argument denotes this as a reading from the robot's odometer. 
+<x> and <y> are the robot's current position from some arbitrary 
+starting point. These measures are in meters. <theta> is robot's 
+current facing angle, in radians.
+
+  LASER <number> <values>...
+<number> is the number of laser readings that were observed. This 
+should usually be 181. Those actual laser measurements are the values
+that follow, in meters. The laser readings are assumed to start at 
+-90 degrees, and occur at every 1 degree up to +90 degrees, with regard
+to the robot's facing angle.
+
+Every time that the robot takes a reading from the laser range finder, 
+a reading is also taken from the odometer. Therefore, every pair of 
+ODOMETER and LASER readings are synchronized, with ODOMETRY printed 
+first. Beyond that, no additional time information is provided.
+
+
+
+DP-SLAM is currently configured to use 50 particles at both the high 
+level and the low level.  To change the number of particles used, you 
+will need to edit the file map.h. Please see comments in map.h for 
+more details on how this is done.
+
+When DP-SLAM is run on a live robot, no command option is is needed. 
+However, if you would like to record the sensory input to a log file
+to run later, use the -r option:
+
+% ./slam -r sample.log
+
+In order to run DP-SLAM using these data logs, use the -p option:
+
+% ./slam -p sample.log
+
+A number of log files can be downloaded from our webpage
+http://www.cs.duke.edu/~parr/dpslam/
+
+Everything is currently set for running the loop5.log data file; 
+you should be able to compile and run it now.
+% make
+% ./slam -p loop5.log
+
+
+
+--- OUPUT FILES ---
+
+DP-SLAM produces the following files as output:
+
+*hmap.png: After every iteration of the high level mapping process, 
+a new map is printed to file, sequentially numbered.
+
+*lmap.png: After each independent run of the low level mapping, a
+map of the area seen during this run is printed to file. This map
+is created from the data which is handed up to the high level mapper.
+These low level maps can be produced more regularly (such as when
+the hierarchical mapping is disabled) by changing VIDEO in low.c. 
+See the comments in that file for more details.
+
+If you have specified the -r option, the log file will be also
+be created with the name specified on the command line.
+
+
+--- IMPORTANT PARAMETERS ---
+
+There are a number of different parameters which are specific to the 
+robot being used. 
+ o TURN_RADIUS (ThisRobot.h) : The laser range finder's distance from 
+   the robot's pivot point when it is turning (in meters).
+ o The motion model (low.c) : A set of parameters designating the 
+   motion model of the robot.
+ o 
+
+Other parameters are commonly altered based on the environment.
+ o PARTICLE_NUMBER (map.h) : The total number of particles used at each 
+   iteration of the low level SLAM process.
+ o H_PARTICLE_NUMBER (map.h) : The same thing, except for the high 
+   level mapper.
+ o MAP_WIDTH & MAP_HEIGHT (map.h) : Defines the maximum dimensions for 
+   maps in the low level SLAM process.
+ o H_MAP_WIDTH & H_MAP_HEIGHT (map.h) : Does the same for the high level
+   map.
+ o LOW_VARIANCE (laser.h) : The standard deviation of noise in the laser
+   as used in the low level mapping.
+ o HIGH_VARIANCE (laser.h) : The same thing, for the high level. Due to
+   other sources of uncertainty inherent in the high level SLAM, this is
+   typically much higher than LOW_VARIANCE.
+ o MAP_SCALE (basic.h) : Defines how many grid squares per meter in our
+   map resolution. Typically used in the 20-35 range (3-5cm per grid 
+   square)
+ o LOW_DURATION (low.h) : How many iterations of low level SLAM are 
+   performed before a single iteration of the high level.
+
+
